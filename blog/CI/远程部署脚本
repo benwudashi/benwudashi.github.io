@@ -1,0 +1,27 @@
+#!/bin/sh
+echo "执行脚本前请先做免密登录设置，具体步骤："
+echo "免密登录设置，第一步：cd ~/.ssh"
+echo "免密登录设置，第二步：ssh-keygen -t rsa   #输入三个回车"
+echo "免密登录设置，第三步：scp id_rsa.pub root@host:~/.ssh/id_rsa.pub.username #需要输入密码"
+echo "免密登录设置，第四步：ssh root@host \"cat ~/.ssh/id_rsa.pub.cs >> ~/.ssh/authorized_keys"
+
+echo "开始执行部署..............."
+echo "部署第一步：打包生成war"
+sleep 1
+mvn package -Dmaven.test.skip=true
+echo "部署第二步：停止host上的应用"
+sleep 1
+ssh root@host "sh /opt/../stop.sh"
+echo "部署第三步：备份"
+sleep 1
+ssh root@host "mv /opt/../deploy/a.war /opt/../deploy/a.war`date +%Y%m%d-%H%M`.bak"
+echo "部署第四步：上传a.war到host"
+sleep 1
+scp workspace/a.war root@host:/opt/../deploy/a.war
+echo "部署第五步：启动host上应用"
+sleep 1
+ssh root@host "sh /opt/../start.sh"
+sleep 1
+echo "部署第六步：查看日志（ctrl+c退出）"
+sleep 1
+ssh root@host "tail -f /opt/../a.log"
