@@ -1,0 +1,81 @@
+
+安装 Docker 之后，首次执行 docker info 时接到错误信息：“Cannot connect to the Docker daemon. Is the docker daemon running on this host?”。
+当时，我再三确认了 Docker 服务运行状态，确实没有任何问题，傻眼了。
+之后，加上 sudo 试试才运行正确。
+分析
+
+网上是说因为要连接 Docker 使用的 Unix Socket 文件 /var/run/docker.sock，而这个连接文件的权限受控。
+
+查看之：
+
+$ sudo ls -l /var/run/docker.sock
+srw-rw---- 1 root docker 0 1月  13 13:26 /var/run/docker.sock
+
+明显，要对这个 Socket 进行 IO 操作的话，三种方法：
+
+    使用 root 权限（切到 root，或 sudo 运行）
+    使用 docker 用户组权限（添加当前用户到 docker 用户组）
+    修改这个 Socket 文件的权限设置（chmod o+rw）
+
+PS：为什么这样设计（普通用户不能执行 Docker 指令）我还没有想明白。
+解决
+
+想了一下，还是加用户到 docker 用户组比较稳妥，操作如下：
+
+cat /etc/group | grep docker # 查找 docker 组，确认其是否存在
+groups # 列出自己的用户组，确认自己在不在 docker 组中
+
+# 如果 docker 组不存在，则添加之：
+sudo groupadd docker
+
+# 将当前用户添加到 docker 组
+sudo gpasswd -a ${USER} docker
+
+# 重启服务
+sudo service docker restart
+
+# 切换一下用户组（刷新缓存）
+newgrp - docker;
+newgrp - `groups ${USER} | cut -d' ' -f1`; # TODO：必须逐行执行，不知道为什么，批量执行时第二条不会生效
+# 或者，注销并重新登录
+pkill X
+
+再试一下，可以了。
+还有话说
+
+看到一篇 CSDN 博客 “Docker安全--将用户添加到Docker组中进行启动容器与未添加到Docker组中的sudo执行的研究”，被其结论吸引，简单做了下验证就发现完全不对。
+最后反观其推导过程，觉得整个推论太不严谨，结论莫名其妙。
+
+博主仅根据用户添加到 docker 组后，Docker Deamon（docker -d）仍运行在 root 帐号下，就得出结论：
+
+    对于将host下的普通用户添加到docker组中后不使用sudo即可执行docker程序，会给大家造成一种启动docker是以非root权限进行启动的假象，其实这样只是减少了每次使用sudo时输入密码的过程罢了，其实docker本身还是以sudo的权限在运行的。
+
+我的验证及看法
+
+首先检查 Docker 的运行情况：
+
+catroll@OE:pts/1 [06:22:24] [~/Documents/Books/Shouce/cloud] [master *]
+-> % ps -ef | grep -v grep | grep docker
+root      8309     1  0 13:26 ?        00:00:06 /usr/bin/dockerd -H fd://
+root      8316  8309  0 13:26 ?        00:00:00 containerd -l unix:///var/run/docker/libcontainerd/docker-containerd.sock --shim containerd-shim --metrics-interval=0 --start-timeout 2m --state-dir /var/run/docker/libcontainerd/containerd --runtime runc
+catroll  18525 12215  1 18:22 pts/0    00:00:00 docker run -it ubuntu bash
+root     18558  8316  0 18:22 ?        00:00:00 containerd-shim 1cdbc2571492a8055d665d6083c00b4023682e82f8cd965c7503b084f9919139 /var/run/docker/libcontainerd/1cdbc2571492a8055d665d6083c00b4023682e82f8cd965c7503b084f9919139 runc
+catroll@OE:pts/1 [06:22:34] [~/Documents/Books/Shouce/cloud] [master *]
+-> % ps -ef | grep -v grep | grep 18558
+root     18558  8316  0 18:22 ?        00:00:00 containerd-shim 1cdbc2571492a8055d665d6083c00b4023682e82f8cd965c7503b084f9919139 /var/run/docker/libcontainerd/1cdbc2571492a8055d665d6083c00b4023682e82f8cd965c7503b084f9919139 runc
+root     18573 18558  0 18:22 pts/2    00:00:00 bash
+
+显然：
+
+    Docker Deamon 和 containerd 在当前主机上以 root 权限运行。
+    我启动 Ubuntu 容器之后，docker run 以当前用户权限运行，
+        一直没有中断，或许是因为 run 子命令的 -it 参数使之挂着，用于和用户交互。
+        PID 为 11215 的父进程，经查证，确实是当前主机上的 zsh 进程。
+    有一个 containerd-shim 进程以 root 进程执行着，仅查证，其下仅挂载一个 root 权限运行的 bash 子进程。
+        containerd-shim 进程，其作用估计就是代替曾经的 dockerinit 给容器做初始化。
+        这里的 root，就是容器中的 root，就是当前主机上的受限 root（参考 Linux Capabilities）。
+        发布于码厩技术博客的所有文章，除注明转载外，均为作者原创，欢迎转载，但必须注明出处。
+尊重他人劳动，共创开源社区！转载请注明以下信息：
+转载来源： 码厩技术博客 [http://www.markjour.com]
+原文标题：不加 sudo 执行 Docker 命令
+原文地址：http://www.markjour.com/article/docker-no-root.html
