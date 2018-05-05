@@ -1,0 +1,143 @@
+ 修改字段属性：
+
+复制代码
+-- 修改字段属性
+-- ALTER TABLE tb_name MODIFY 字段名称 字段类型 [完整性约束条件]
+-- 将email字段 VARCHAR(50)修改成VARCHAR(200)
+-- 注意，修改时如果不带完整性约束条件，原有的约束条件将丢失，如果想保留修改时就得带上完整性约束条件
+ALTER TABLE user10 MODIFY email VARCHAR(200) NOT NULL DEFAULT 'a@a.com';
+
+-- 将card移到test后面
+ALTER TABLE user10 MODIFY card CHAR(10) AFTER test;
+
+-- 将test放到第一个，保留原完整性约束条件
+ALTER TABLE user10 MODIFY test CHAR(32) NOT NULL DEFAULT '123' FIRST;
+复制代码
+修改字段名称和属性：
+
+-- 将test字段改为test1
+-- ALTER TABLE 表名 CHANGE 原字段名 新字段名 字段类型 约束条件
+ALTER TABLE user10 CHANGE test test1 CHAR(32) NOT NULL DEFAULT '123';
+ 
+
+添加删除默认值：
+
+复制代码
+-- 创建新表
+CREATE TABLE user11(
+id TINYINT UNSIGNED KEY AUTO_INCREMENT,
+username VARCHAR(20) NOT NULL UNIQUE,
+age TINYINT UNSIGNED
+);
+
+-- 给age添加默认值
+ALTER TABLE user11 ALTER age SET DEFAUTL 18;
+-- 添加一个字段
+ALTER TABLE user11 ADD email VARCHAR(50);
+-- 给email添加默认值
+ALTER TABLE user11 ALTER email SET DEFAULT 'a@a.com';
+
+-- 删除默认值
+ALTER TABLE user11 ALTER age DROP DEFAULT;
+ALTER TABLE user11 ALTER email DROP DEFAULT;
+复制代码
+ 
+
+添加主键：
+
+复制代码
+-- 创建一个表
+CREATE TABLE test12(
+id INT
+);
+-- 添加主键
+-- ALTER TABLE tb_name ADD [CONSTRAINT [sysmbol]] PRIMARY KEY [index_type] (字段名称,...)
+ALTER TABLE test12 ADD PRIMARY KEY(id);
+
+
+-- 添加复合主键
+-- 先创建个表
+CREATE TABLE test13(
+id INT,
+card CHAR(18),
+username VARCHAR(20) NOT NULL
+);
+-- 添加复合主键
+ALTER TABLE test13 ADD PRIMARY KEY(id,card);
+复制代码
+删除主键：
+
+-- 删除主键
+ALTER TABLE test12 DROP PRIMARY KEY;
+
+-- 再给test12添加主键, 完整形式
+ALTER TABLE test12 ADD CONSTRAINT symbol PRIMARY KEY index_type(id);
+在删除主键时，有一种情况是需要注意的，我们知道具有自增长的属性的字段必须是主键，如果表里的主键是具有自增长属性的；那么直接删除是会报错的。如果想要删除主键的话，可以先去年自增长属性，再删除主键
+
+复制代码
+-- 再创建一个表，
+CREATE TABLE test14(
+id INT UNSIGNED KEY AUTO_INCREMENT
+);
+
+-- 删除主键，这样会报错，因为自增长的必须是主键
+ALTER TABLE test14 DROP PRIMARY KEY;
+
+-- 先用MODIFY删除自增长属性，注意MODIFY不能去掉主键属性
+ALTER TABLE test14 MODIFY id INT UNSIGNED;
+-- 再来删除主键
+ALTER TABLE test14 DROP PRIMARY KEY;
+复制代码
+ 
+
+ 
+
+唯一索引：
+
+复制代码
+-- 添加唯一性约束
+-- ALTER TABLE tb_name ADD [CONSTANT [symbol]] UNIQUE [INDEX | KEY] [索引名称](字段名称,...)
+
+-- 创建测试表
+CREATE TABLE user12(
+id TINYINT UNSIGNED KEY AUTO_INCREMENT,
+username VARCHAR(20) NOT NULL,
+card CHAR(18) NOT NULL,
+test VARCHAR(20) NOT NULL,
+test1 CHAR(32) NOT NULL
+);
+
+-- username添加唯一性约束，如果没有指定索引名称，系统会以字段名建立索引
+ALTER TABLE user12 ADD UNIQUE(username);
+-- car添加唯一性约束
+ALTER TABLE user12 ADD CONSTRAINT symbol UNIQUE KEY uni_card(card);
+-- 查看索引
+SHOW CREATE TABLE user12;
+
+-- test,test1添加联合unique
+ALTER TABLE user12 ADD CONSTRAINT symbol UNIQUE INDEX mulUni_test_test1(test, test1);
+
+-- 删除唯一
+-- ALTER TABLE tb_name DROP {INDEX|KEY} index_name;
+-- 删除刚刚添加的唯一索引
+ALTER TABLE user12 DROP INDEX username;
+ALTER TABLE user12 DROP KEY uni_card;
+ALTER TABLE user12 DROP KEY mulUni_test_test1;
+复制代码
+ 
+
+修改表的存储引擎：
+
+-- 修改表的存储引擎
+-- ALTER TABLE tb_name ENGINE=存储引擎名称
+ALTER TABLE user12 ENGINE=MyISAM;
+ALTER TABLE user12 ENGINE=INNODB;
+ 
+
+修改自增长值：
+
+-- 修改自增长的值
+-- ALTER TABLE tb_name AUTO_INCREMENT=值
+ALTER TABLE user12 AUTO_INCREMENT=100;
+
+原文链接 https://www.cnblogs.com/huangxm/p/5736807.html
