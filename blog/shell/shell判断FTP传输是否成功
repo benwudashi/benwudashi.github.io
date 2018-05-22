@@ -1,0 +1,22 @@
+#!/bin/bash
+##判断FTP传输文件是否成功
+exec 6>&1 1>/tmp/lzc.txt   ##打开一个文件描述符6，保存文件描述符1的属性，然后将描述1重定向到lzc.txt文件
+ftp -nv<<!
+open 10.24.0.74
+user ftp 123!@#
+cd /tmp
+lcd /tmp
+put hello.txt
+close
+bye
+!
+ 
+exec 1>&6    ##将重定向的标准输出从文件描述符6恢复到描述符1
+exec 6>&-   ##关闭文件描述符6
+if grep -q "Transfer complete" /tmp/lzc.txt;then
+    echo "success!"
+else
+    echo "failure!"
+fi
+参考资料：http://blog.csdn.net/21aspnet/article/details/7487770
+        https://www.cnblogs.com/Before/p/5500678.html
