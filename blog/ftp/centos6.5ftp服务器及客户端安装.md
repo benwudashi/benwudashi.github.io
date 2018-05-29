@@ -27,7 +27,9 @@ anonymous_enable=NO
 防火墙 ：  
  sudo vi /etc/sysconfig/iptables  
 -A INPUT -m state --state NEW -m tcp -p tcp --dport 21 -j ACCEPT  
--A INPUT -m state --state NEW -m tcp -p tcp --dport 20 -j ACCEPT  
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 20 -j ACCEPT
+#被动模式端口
+-A INPUT -p tcp --dport 6000:7000 -j ACCEPT
 创建用户：  
 sudo useradd -s /bin/bash -d /var/ftp/ftpdata -m ftpuser -g ftp -G root  
 设置密码命令：  
