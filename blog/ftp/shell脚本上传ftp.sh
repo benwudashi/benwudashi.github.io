@@ -1,7 +1,6 @@
 #!/bin/bash
 . /etc/profile
-. ~/.bash_profile ##加载环境变量，以便可以执行mysql
-
+. ~/.bash_profile ##加载环境变量
 ftp_host=192.168.10.10
 ftp_user=ftp_user
 ftp_pass=ftp_pass
