@@ -55,7 +55,7 @@
     <!-- ***************************************************************** -->
     <!-- info级别的日志appender -->
     <!-- ***************************************************************** -->
-    <appender name="green-info" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="app-info" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}-info-30dt.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${APP_NAME}-info-30dt.log.%d{yyyy-MM-dd}.%i</fileNamePattern>
@@ -70,7 +70,7 @@
     <!-- ***************************************************************** -->
     <!-- error级别日志appender -->
     <!-- ***************************************************************** -->
-    <appender name="green-error" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="app-error" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${APP_NAME}-error-30dt.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${APP_NAME}-error-30dt.%d{yyyy-MM-dd}.%i</fileNamePattern>
